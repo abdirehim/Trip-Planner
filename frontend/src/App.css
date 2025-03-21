@@ -1,4 +1,4 @@
-/* src/App.css */
+/* src/App.css
 .app-container {
   min-height: 100vh;
   background-color: #f8f9fa;
@@ -31,4 +31,94 @@ header {
 .log-sheet .badge:hover {
   transform: scale(1.1);
   z-index: 10;
+} */
+
+/* .app-container {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.log-sheet-container {
+  width: 100%;
+}
+
+.log-sheet-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.log-sheet-table th, .log-sheet-table td {
+  padding: 5px;
+  text-align: center;
+  border: 1px solid #dee2e6;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.log-sheet-table th {
+  position: relative;
+}
+
+.mid-day-marker {
+  font-size: 10px;
+  color: #666;
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+} */
+
+
+
+.app-container {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.log-sheet-container {
+  width: 100%;
+}
+
+.log-sheet-table {
+  width: 100%;
+  min-width: 1200px; /* Ensures the table is wide enough to stretch across the screen */
+  table-layout: auto; /* Allows columns to stretch evenly */
+}
+
+.log-sheet-table th, .log-sheet-table td {
+  padding: 8px; /* Increased padding for better readability */
+  text-align: center;
+  border: 1px solid #dee2e6;
+  white-space: nowrap;
+  font-size: 14px; /* Increased font size */
+}
+
+.log-sheet-table th {
+  position: relative;
+  min-width: 50px; /* Minimum width for each hour column */
+}
+
+.log-sheet-table th.fixed-width-label,
+.log-sheet-table td.fixed-width-label {
+  min-width: 80px; /* Fixed width for "Hour" and "Status" labels */
+  width: 80px;
+}
+
+.mid-day-marker {
+  font-size: 10px;
+  color: #666;
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }

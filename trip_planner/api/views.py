@@ -1,10 +1,11 @@
+
 # from rest_framework.views import APIView
 # from rest_framework.response import Response
 # import requests
 # from .serializers import TripInputSerializer
 
 # # Replace with your ORS API key from openrouteservice.org
-# ORS_API_KEY = "5b3ce3597851110001cf6248490ad3ae81024db18fa187b2ae1282d9"
+# ORS_API_KEY ="5b3ce3597851110001cf6248490ad3ae81024db18fa187b2ae1282d9"
 
 # class TripPlannerView(APIView):
 #     # HOS Constants (defined at class level)
@@ -42,10 +43,10 @@
 #             trip_plan = self.plan_trip(distance_miles, cycle_used)
 
 #             return Response({
-#                 'route': route,  # GeoJSON compatible with react-leaflet
+#                 'route': route,
 #                 'log_sheets': trip_plan['log_sheets'],
-#                 'fueling_stops': trip_plan['fueling_stops'],  # Added for frontend
-#                 'total_distance': distance_miles  # Added for frontend
+#                 'fueling_stops': trip_plan['fueling_stops'],
+#                 'total_distance': distance_miles
 #             })
 #         return Response(serializer.errors, status=400)
 
@@ -95,17 +96,15 @@
 #             cumulative_driving = 0
 #             daily_fueling_stops = 0
 
-#             while (
-#                 driving_hours < self.DAILY_DRIVING_LIMIT and
-#                 on_duty_hours < self.DAILY_ON_DUTY_LIMIT and
-#                 on_duty_hours < remaining_cycle and
-#                 remaining_distance > 0
-#             ):
-#                 if cumulative_driving >= self.BREAK_TRIGGER and driving_hours < self.DAILY_DRIVING_LIMIT:
+#             # Drive until daily limits are reached
+#             while (driving_hours < self.DAILY_DRIVING_LIMIT and 
+#                    on_duty_hours < self.DAILY_ON_DUTY_LIMIT and 
+#                    on_duty_hours < remaining_cycle and 
+#                    remaining_distance > 0):
+#                 # Add 30-minute break after 8 hours of driving
+#                 if cumulative_driving >= self.BREAK_TRIGGER:
 #                     on_duty_hours += self.BREAK_DURATION
 #                     cumulative_driving = 0
-#                 elif driving_hours >= self.DAILY_DRIVING_LIMIT:
-#                     break
 
 #                 driving_segment = min(
 #                     self.DAILY_DRIVING_LIMIT - driving_hours,
@@ -116,7 +115,8 @@
 #                 distance_covered = driving_segment * self.AVG_SPEED
 #                 total_distance_traveled += distance_covered
 #                 new_position = current_position + distance_covered
-
+                
+#                 # Add fueling stops based on total distance
 #                 new_fueling_stops = max(0, int(total_distance_traveled / self.FUELING_INTERVAL) - 
 #                                         int((total_distance_traveled - distance_covered) / self.FUELING_INTERVAL))
 #                 daily_fueling_stops += new_fueling_stops
@@ -127,17 +127,18 @@
 #                             'distance': fueling_distance,
 #                             'day': day
 #                         })
-
-#                 on_duty_hours += driving_segment + (daily_fueling_stops * self.FUELING_TIME)
+                
+#                 on_duty_hours += driving_segment + (new_fueling_stops * self.FUELING_TIME)
 #                 driving_hours += driving_segment
 #                 cumulative_driving += driving_segment
 #                 current_position = new_position
 #                 remaining_distance -= distance_covered
 
-#             if remaining_distance <= 0 and day == len(log_sheets) + 1:
+#             # Add drop-off time on the last day
+#             if remaining_distance <= 0:
 #                 on_duty_hours += self.PICKUP_DROP_OFF_TIME
 
-#             log = self.generate_log_sheet(day, driving_hours, on_duty_hours, daily_fueling_stops)
+#             log = self.generate_log_sheet(day, driving_hours, on_duty_hours, daily_fueling_stops, remaining_distance <= 0)
 #             log_sheets.append(log)
 
 #             remaining_cycle -= on_duty_hours
@@ -151,20 +152,48 @@
 #             'fueling_stops': fueling_stops
 #         }
 
-#     def generate_log_sheet(self, day, driving_hours, on_duty_hours, fueling_stops):
+#     def generate_log_sheet(self, day, driving_hours, on_duty_hours, fueling_stops, is_last_day):
+#         """Generate a 24-hour log sheet with duty statuses."""
 #         log = ['OFF'] * 24
 #         current_hour = 0
 
+#         # Pickup (Day 1 only)
 #         if day == 1:
 #             for h in range(int(self.PICKUP_DROP_OFF_TIME)):
-#                 log[current_hour + h] = 'ON'
+#                 if current_hour + h < 24:
+#                     log[current_hour + h] = 'ON'
 #             current_hour += int(self.PICKUP_DROP_OFF_TIME)
 
+#         # Driving with breaks
+#         driving_logged = 0
+#         while driving_logged < driving_hours and current_hour < 24:
+#             if driving_logged >= self.BREAK_TRIGGER:
+#                 for h in range(int(self.BREAK_DURATION * 2)):
+#                     if current_hour + h < 24:
+#                         log[current_hour + h] = 'SB'
+#                 current_hour += int(self.BREAK_DURATION * 2)
+#                 driving_logged = self.BREAK_TRIGGER
+#             segment = min(self.BREAK_TRIGGER - (driving_logged % self.BREAK_TRIGGER), driving_hours - driving_logged)
+#             for h in range(int(segment)):
+#                 if current_hour + h < 24:
+#                     log[current_hour + h] = 'D'
+#             current_hour += int(segment)
+#             driving_logged += segment
+
+#         # Fueling stops
 #         for _ in range(fueling_stops):
 #             if current_hour < 24:
 #                 log[current_hour] = 'ON'
 #                 current_hour += 1
 
+#         # Drop-off (last day)
+#         if is_last_day:
+#             for h in range(int(self.PICKUP_DROP_OFF_TIME)):
+#                 if current_hour + h < 24:
+#                     log[current_hour + h] = 'ON'
+#             current_hour += int(self.PICKUP_DROP_OFF_TIME)
+
+#         # Ensure 10-hour rest
 #         rest_hours = min(self.REST_DURATION, 24 - current_hour)
 #         for h in range(rest_hours):
 #             if current_hour + h < 24:
@@ -178,7 +207,7 @@ import requests
 from .serializers import TripInputSerializer
 
 # Replace with your ORS API key from openrouteservice.org
-ORS_API_KEY ="5b3ce3597851110001cf6248490ad3ae81024db18fa187b2ae1282d9"
+ORS_API_KEY = "5b3ce3597851110001cf6248490ad3ae81024db18fa187b2ae1282d9"
 
 class TripPlannerView(APIView):
     # HOS Constants (defined at class level)
@@ -269,12 +298,10 @@ class TripPlannerView(APIView):
             cumulative_driving = 0
             daily_fueling_stops = 0
 
-            # Drive until daily limits are reached
             while (driving_hours < self.DAILY_DRIVING_LIMIT and 
                    on_duty_hours < self.DAILY_ON_DUTY_LIMIT and 
                    on_duty_hours < remaining_cycle and 
                    remaining_distance > 0):
-                # Add 30-minute break after 8 hours of driving
                 if cumulative_driving >= self.BREAK_TRIGGER:
                     on_duty_hours += self.BREAK_DURATION
                     cumulative_driving = 0
@@ -289,7 +316,6 @@ class TripPlannerView(APIView):
                 total_distance_traveled += distance_covered
                 new_position = current_position + distance_covered
                 
-                # Add fueling stops based on total distance
                 new_fueling_stops = max(0, int(total_distance_traveled / self.FUELING_INTERVAL) - 
                                         int((total_distance_traveled - distance_covered) / self.FUELING_INTERVAL))
                 daily_fueling_stops += new_fueling_stops
@@ -307,7 +333,6 @@ class TripPlannerView(APIView):
                 current_position = new_position
                 remaining_distance -= distance_covered
 
-            # Add drop-off time on the last day
             if remaining_distance <= 0:
                 on_duty_hours += self.PICKUP_DROP_OFF_TIME
 
@@ -346,7 +371,11 @@ class TripPlannerView(APIView):
                         log[current_hour + h] = 'SB'
                 current_hour += int(self.BREAK_DURATION * 2)
                 driving_logged = self.BREAK_TRIGGER
-            segment = min(self.BREAK_TRIGGER - (driving_logged % self.BREAK_TRIGGER), driving_hours - driving_logged)
+            segment = min(
+                self.DAILY_DRIVING_LIMIT - driving_logged,
+                self.BREAK_TRIGGER - (driving_logged % self.BREAK_TRIGGER),
+                driving_hours - driving_logged
+            )
             for h in range(int(segment)):
                 if current_hour + h < 24:
                     log[current_hour + h] = 'D'
