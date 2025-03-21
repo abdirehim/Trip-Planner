@@ -131,7 +131,7 @@ const TripForm = ({ onTripPlanned }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch('http://localhost:8000/api/plan-trip/', {
+            const response = await fetch('https://trip-planner-backend-h2df.onrender.com/api/plan-trip/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
