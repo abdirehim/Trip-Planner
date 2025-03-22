@@ -72,7 +72,7 @@ TEMPLATES = [
 ]
 
 
-CORS_ALLOWED_ORIGINS = ["*"]
+CORS_ALLOWED_ORIGINS = ['*']
 
 WSGI_APPLICATION = 'trip_planner.wsgi.application'
 
