@@ -72,7 +72,7 @@ TEMPLATES = [
 ]
 
 
-CORS_ALLOWED_ORIGINS = ['*']
+CORS_ALLOWED_ORIGINS = ['https://trip-planner-g4mm.vercel.app/']
 
 WSGI_APPLICATION = 'trip_planner.wsgi.application'
 
